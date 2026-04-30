@@ -1,7 +1,10 @@
 // gcc -g main.c -Wall -o main
 // diff parent_maps.txt child_maps.txt
+// kill
+// ps aux | grep -E "|" | grep -v grep
 
 #include <stdio.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -13,31 +16,45 @@
 
 int global = 123;
 
-void print_memory_maps(char* path) {
+void print_vars(int* a, int* b) {
+    printf("global = %d, addr = %p\n", *a, (void*)a);
+    printf("local = %d, addr = %p\n", *b, (void*)b);
+}
+
+void print_status(int status) {
+    if (WIFEXITED(status)) {
+        int exit_code = WEXITSTATUS(status);
+        printf("\nThe child exited with code: %d\n", exit_code);
+    }
+    else if (WIFSIGNALED(status)) {
+        int signal = WTERMSIG(status);
+        printf("\nThe child process was terminated by signal: %d\n", signal);
+    }
+    else if (WCOREDUMP(status)) {
+        printf("\nThe child produced a core dump\n");
+    }
+}
+
+void print_my_maps(char* file) {
     FILE *fp = fopen("/proc/self/maps", "r");
     if (fp == NULL) {
         perror("fopen");
         return;
     }
-    FILE *dest = fopen(path, "w");
-    if (dest == NULL) {
-        fclose(fp);
+    FILE *f = fopen(file, "w");
+    if (f == NULL) {
         perror("fopen");
+        fclose(fp);
         return;
     }
     
     char line[BUF_SIZE];
     while (fgets(line, sizeof(line), fp) != NULL) {
-        fprintf(dest, "%s", line);
+        fprintf(f, "%s", line);
     }
     
+    fclose(f);
     fclose(fp);
-    fclose(dest);
-}
-
-void print_vars(int* a, int* b) {
-    printf("global = %d, addr = %p\n", *a, (void*)a);
-    printf("local = %d, addr = %p\n", *b, (void*)b);
 }
 
 void task1() {
@@ -55,35 +72,37 @@ void task1() {
     }
 
     if (fork_res == CHILD) {
+        printf("\nChild:\n");
         pid_t parent_pid = getppid();
         pid_t my_pid = getpid();
-
-        printf("\nChild:\n");
         printf("- PID: %d\n", my_pid);
         printf("- Parent PID: %d\n", parent_pid);
+        sleep(20);
+
         printf("- Old vars:\n");
         print_vars(&global, &local);
         global = 456;
         local = 7654;
         printf("- New vars:\n");
         print_vars(&global, &local);
-        print_memory_maps("child_maps.txt");
+        print_my_maps("child_maps.txt");
+
+        //raise(SIGKILL);
+        sleep(5);
 
         exit(EXIT_CODE);
     }
     else {
-        sleep(1);
+        sleep(21);
         printf("\n\nParent:\n");
         print_vars(&global, &local);
-        print_memory_maps("parent_maps.txt");
-        sleep(30);
+        print_my_maps("parent_maps.txt");
+
+        sleep(10);
 
         int status;
         wait(&status);
-        if (WIFEXITED(status)) {
-            int exit_code = WEXITSTATUS(status);
-            printf("\nExit code: %d\n", exit_code);
-        }
+        print_status(status);
     }
 }
 
