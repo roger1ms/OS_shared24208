@@ -1,2 +1,0 @@
-    PID TTY      STAT   TIME COMMAND
-   9398 pts/0    Z+     0:00 [lab5] <defunct>
