@@ -1,0 +1,24 @@
+643b0dea0000-643b0dea1000 r--p 00000000 103:05 1987357                   /home/olegt/Desktop/nsu_os_labs/lab5_1/lab5
+643b0dea1000-643b0dea2000 r-xp 00001000 103:05 1987357                   /home/olegt/Desktop/nsu_os_labs/lab5_1/lab5
+643b0dea2000-643b0dea3000 r--p 00002000 103:05 1987357                   /home/olegt/Desktop/nsu_os_labs/lab5_1/lab5
+643b0dea3000-643b0dea4000 r--p 00002000 103:05 1987357                   /home/olegt/Desktop/nsu_os_labs/lab5_1/lab5
+643b0dea4000-643b0dea5000 rw-p 00003000 103:05 1987357                   /home/olegt/Desktop/nsu_os_labs/lab5_1/lab5
+643b2ff0e000-643b2ff2f000 rw-p 00000000 00:00 0                          [heap]
+74f566400000-74f566428000 r--p 00000000 103:05 163747                    /usr/lib/x86_64-linux-gnu/libc.so.6
+74f566428000-74f5665b0000 r-xp 00028000 103:05 163747                    /usr/lib/x86_64-linux-gnu/libc.so.6
+74f5665b0000-74f5665ff000 r--p 001b0000 103:05 163747                    /usr/lib/x86_64-linux-gnu/libc.so.6
+74f5665ff000-74f566603000 r--p 001fe000 103:05 163747                    /usr/lib/x86_64-linux-gnu/libc.so.6
+74f566603000-74f566605000 rw-p 00202000 103:05 163747                    /usr/lib/x86_64-linux-gnu/libc.so.6
+74f566605000-74f566612000 rw-p 00000000 00:00 0 
+74f566662000-74f566665000 rw-p 00000000 00:00 0 
+74f56667f000-74f566681000 rw-p 00000000 00:00 0 
+74f566681000-74f566685000 r--p 00000000 00:00 0                          [vvar]
+74f566685000-74f566687000 r--p 00000000 00:00 0                          [vvar_vclock]
+74f566687000-74f566689000 r-xp 00000000 00:00 0                          [vdso]
+74f566689000-74f56668a000 r--p 00000000 103:05 163743                    /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+74f56668a000-74f5666b5000 r-xp 00001000 103:05 163743                    /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+74f5666b5000-74f5666bf000 r--p 0002c000 103:05 163743                    /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+74f5666bf000-74f5666c1000 r--p 00036000 103:05 163743                    /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+74f5666c1000-74f5666c3000 rw-p 00038000 103:05 163743                    /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7ffe61a29000-7ffe61a4b000 rw-p 00000000 00:00 0                          [stack]
+ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]
