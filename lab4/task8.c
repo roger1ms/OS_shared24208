@@ -27,3 +27,5 @@ int main(void) {
 
     return EXIT_SUCCESS;
 }
+
+//:3 Тут комент нужно был не спрашивайте зачем
