@@ -21,14 +21,18 @@ int reader_wait(pid_t writer, sigset_t* set) {
     int sig, err;
     while (TRUE) {
         sig = sigtimedwait(set, NULL, &timeout);
-        if (sig == ERR && errno == EAGAIN) {
-            printf("%d\n", getppid());
-            if (getppid() != writer) {
-                printf("Writer died, exiting\n");
-                return STOP;
-            }
-            continue;
-        }
+		if (sig == ERR) {
+        	if (errno == EAGAIN) {
+            	//printf("%d\n", getppid());
+            	if (getppid() != writer) {
+                	printf("Writer died, exiting\n");
+                	return STOP;
+            	}
+            	continue;
+        	}
+			perror("sigtimedwait");
+			return STOP;
+		}
         else if (sig == SIGINT) {
             printf("\nReader was stopped by SIGINT\n");
             err = kill(writer, SIGUSR2);
@@ -49,7 +53,7 @@ void reader(void* addr, int size, sigset_t* set) {
     pid_t writer = getppid();
     int res = mprotect(addr, size, PROT_READ);
     if (res == ERR) {
-        perror("mprotect (child)");
+        perror("mprotect");
         return;
     }
     int first = 1;
@@ -66,8 +70,8 @@ void reader(void* addr, int size, sigset_t* set) {
         }
 
         unsigned int* int_addr = (unsigned int*)addr;
-        for (int i = 0; i < size / sizeof(int); i++) {
-            number = int_addr[i];
+        for (int i = 0; i < size / sizeof(unsigned int); i++) {
+			number = int_addr[i];
             if (first == 1) {
                 first = 0;
             }
@@ -76,6 +80,7 @@ void reader(void* addr, int size, sigset_t* set) {
             }
             last_number = number;
         }
+        printf("Reader: map read\n");
     }
 }
 
@@ -83,18 +88,22 @@ int writer_wait(pid_t reader, sigset_t* set) {
     int sig, err;
     while (TRUE) {
         sig = sigtimedwait(set, NULL, &timeout);
-        if (sig == ERR && errno == EAGAIN) {
-            int status;
-            pid_t ret = waitpid(reader, &status, WNOHANG);
-            if (ret == reader) {
-                printf("Reader died, exiting\n");
-                return STOP;
-            } else if (ret == ERR) {
-                perror("waitpid");
-                return STOP;
-            }
-            continue;
-        }
+        if (sig == ERR) {
+			if (errno == EAGAIN) {
+            	int status;
+            	pid_t ret = waitpid(reader, &status, WNOHANG);
+            	if (ret == reader) {
+                	printf("Reader died, exiting\n");
+                	return STOP;
+            	} else if (ret == ERR) {
+                	perror("waitpid");
+                	return STOP;
+            	}
+            	continue;
+        	}
+			perror("sigtimedwait");
+			return STOP;
+		}
         else if (sig == SIGINT) {
             printf("\nWriter was stopped by SIGINT\n");
             err = kill(reader, SIGUSR2);
@@ -121,7 +130,7 @@ void writer(void* addr, int size, int fork_res, sigset_t* set) {
         }
 
         unsigned int* int_addr = (unsigned int*)addr;
-        for (int i = 0; i < size / sizeof(int); i++) {
+        for (int i = 0; i < size / sizeof(unsigned int); i++) {
             int_addr[i] = number;
             //printf("%d: %u\n", i, int_addr[i]);
             number++;
@@ -131,6 +140,7 @@ void writer(void* addr, int size, int fork_res, sigset_t* set) {
             perror("kill");
             return;
         }
+        printf("Writer: map updated\n");
     }
 }
 
@@ -141,12 +151,12 @@ int set_sigset(sigset_t* set) {
         return ERR;
     }
     err = sigaddset(set, SIGUSR1); 
-        if (err == ERR) {
+    if (err == ERR) {
         perror("sigaddset");
         return ERR;
     }
     err = sigaddset(set, SIGUSR2);
-        if (err == ERR) {
+    if (err == ERR) {
         perror("sigaddset");
         return ERR;
     }
@@ -155,7 +165,7 @@ int set_sigset(sigset_t* set) {
         perror("sigaddset");
         return ERR;
     }
-    err = sigprocmask(SIG_BLOCK, set, NULL);
+    err = sigprocmask(SIG_SETMASK, set, NULL);
     if (err == ERR) {
         perror("sigprocmask");
         return ERR;
@@ -170,7 +180,7 @@ void task6() {
         return;
     }
 
-    int size = sysconf(_SC_PAGE_SIZE);
+    long size = sysconf(_SC_PAGE_SIZE);
     if (size == ERR) {
         perror("sysconf");
         return;
@@ -186,11 +196,13 @@ void task6() {
         perror("fork");
         return;
     }
-
+    
     if (fork_res == CHILD) {
+        printf("Reader PID: %d\n", getpid());
         reader(addr, size, &set);
     }
     else {
+        printf("Writer PID: %d\n", getpid());
         writer(addr, size, fork_res, &set);
     }
 
