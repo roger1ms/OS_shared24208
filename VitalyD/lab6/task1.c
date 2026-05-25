@@ -13,11 +13,6 @@
 #define TRUE 1
 
 void reader(void* addr, int size) {
-    int res = mprotect(addr, size, PROT_READ);
-    if (res == ERR) {
-        perror("mprotect (child)");
-        return;
-    }
     int first = 1;
     unsigned int number, last_number;
     while (TRUE) {
@@ -69,6 +64,10 @@ void task1() {
     }
     else {
         writer(addr, size, fork_res);
+        int status;
+        if (waitpid(fork_res, &status, 0) == ERR) {
+            perror("waitpid");
+        }
     }
 
 
