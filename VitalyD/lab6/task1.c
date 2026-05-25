@@ -56,6 +56,10 @@ void task1() {
     pid_t fork_res = fork();
     if (fork_res == ERR) {
         perror("fork");
+        int res = munmap(addr, size);
+        if (res == ERR) {
+            perror("munmap");
+        }
         return;
     }
 
