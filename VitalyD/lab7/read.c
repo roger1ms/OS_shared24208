@@ -1,6 +1,7 @@
 // gcc -g read.c -Wall -o read
 // ./read
 // sudo -u test_user ./read
+// chmod u+s ./read
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +9,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
 
