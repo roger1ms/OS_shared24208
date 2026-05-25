@@ -14,7 +14,7 @@
 #define SUC 0
 
 int create_file() {
-    int fd = open("private_file.txt", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+    int fd = open("private_file.txt", O_CREAT | O_WRONLY, S_IRUSR);
 
     if (fd == ERR) {
         perror("open");
