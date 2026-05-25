@@ -22,13 +22,13 @@ void reader(void* addr, int size) {
     unsigned int number, last_number;
     while (TRUE) {
         unsigned int* int_addr = (unsigned int*)addr;
-        for (int i = 0; i < size / sizeof(int); i++) {
+        for (int i = 0; i < size / sizeof(unsigned int); i++) {
             number = int_addr[i];
             if (first == 1) {
                 first = 0;
             }
             else if (last_number + 1 != number) {
-                printf("Numbers %u and %u are not consistently\n", number, last_number);
+                printf("Numbers %u and %u are not consistently (difference: %d)\n", number, last_number, number - last_number - 1);
             }
             last_number = number;
         }
@@ -38,7 +38,7 @@ void writer(void* addr, int size, int fork_res) {
     unsigned int number = 0;
     while (TRUE) {
         unsigned int* int_addr = (unsigned int*)addr;
-        for (int i = 0; i < size / sizeof(int); i++) {
+        for (int i = 0; i < size / sizeof(unsigned int); i++) {
             int_addr[i] = number;
             //printf("%d: %u\n", i, int_addr[i]);
             number++;
@@ -47,7 +47,7 @@ void writer(void* addr, int size, int fork_res) {
 }
 
 void task1() {
-    int size = sysconf(_SC_PAGE_SIZE);
+    long size = sysconf(_SC_PAGE_SIZE);
     if (size == ERR) {
         perror("sysconf");
         return;
