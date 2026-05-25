@@ -108,7 +108,7 @@ int writer_wait(pid_t reader, sigset_t* set) {
             return STOP;
         }
         else if (sig == SIGUSR2) {
-            printf("\nReader was stopped by writer\n");
+            printf("\nWriter was stopped by reader\n");
             return STOP;
         }
         return CONTINUE;
@@ -189,6 +189,10 @@ void task6() {
     pid_t fork_res = fork();
     if (fork_res == ERR) {
         perror("fork");
+        int res = munmap(addr, size);
+        if (res == ERR) {
+            perror("munmap");
+        }
         return;
     }
     
