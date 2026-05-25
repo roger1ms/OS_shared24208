@@ -51,11 +51,6 @@ int reader_wait(pid_t writer, sigset_t* set) {
 }
 void reader(void* addr, int size, sigset_t* set) {
     pid_t writer = getppid();
-    int res = mprotect(addr, size, PROT_READ);
-    if (res == ERR) {
-        perror("mprotect");
-        return;
-    }
     int first = 1;
     unsigned int number, last_number;
     while (TRUE) {
@@ -204,6 +199,10 @@ void task6() {
     else {
         printf("Writer PID: %d\n", getpid());
         writer(addr, size, fork_res, &set);
+        int status;
+        if (waitpid(fork_res, &status, 0) == ERR) {
+            perror("waitpid");
+        }
     }
 
     int res = munmap(addr, size);
