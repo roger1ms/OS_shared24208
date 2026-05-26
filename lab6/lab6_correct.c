@@ -57,6 +57,7 @@ int prepare_signals() {
 int wait_signal(int* received_signal) {
     int err = sigwait(&set, received_signal);
     if (err != SUCCESS) {
+        errno = err;
         perror("sigwait error");
         return ERROR;
     }
@@ -74,16 +75,16 @@ int send_signal(pid_t pid, int signal) {
     return SUCCESS;
 }
 
-void task() {
+int task() {
     int err = prepare_signals();
     if (err == ERROR) {
-        return;
+        return EXIT_FAILURE;
     }
 
     long page_size_long = sysconf(_SC_PAGE_SIZE);
     if (page_size_long == ERROR) {
         perror("sysconf error");
-        return;
+        return EXIT_FAILURE;
     }
 
     int buffer_size = (int)page_size_long;
@@ -92,7 +93,7 @@ void task() {
     void* shared_memory = mmap(NULL, buffer_size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     if (shared_memory == MAP_FAILED) {
         perror("mmap error");
-        return;
+        return EXIT_FAILURE;
     }
 
     pid_t fork_res = fork();
@@ -104,10 +105,12 @@ void task() {
             perror("munmap after fork error");
         }
 
-        return;
+        return EXIT_FAILURE;
     }
 
     if (fork_res == CHILD) {
+        int exit_code = SUCCESS;
+
         pid_t parent_pid = getppid();
 
         printf("Parent pid: %d, child pid: %d\n", parent_pid, getpid());
@@ -121,12 +124,14 @@ void task() {
             if (i % buffer_len == (unsigned int)(buffer_len - 1)) {
                 err = send_signal(parent_pid, DATA_SIGNAL);
                 if (err == ERROR) {
+                    exit_code = EXIT_FAILURE;
                     break;
                 }
 
                 int received_signal;
                 err = wait_signal(&received_signal);
                 if (err == ERROR) {
+                    exit_code = EXIT_FAILURE;
                     break;
                 }
 
@@ -135,7 +140,7 @@ void task() {
 
                     err = send_signal(parent_pid, STOP_SIGNAL);
                     if (err == ERROR) {
-                        break;
+                        exit_code = EXIT_FAILURE;
                     }
 
                     break;
@@ -153,27 +158,27 @@ void task() {
             }
 
             i++;
-            if (i == LIMIT_VALUE) {
-                i = 0;
-            }
         }
 
         err = munmap(shared_memory, buffer_size);
         if (err == ERROR) {
             perror("munmap child");
+            exit_code = EXIT_FAILURE;
         }
 
-        exit(SUCCESS);
+        exit(exit_code);
     }
 
     unsigned int* int_ptr = (unsigned int*)shared_memory;
     unsigned int expected = 0;
     int error_cnt = 0;
+    int exit_code = SUCCESS;
 
     while (1) {
         int received_signal;
         err = wait_signal(&received_signal);
         if (err == ERROR) {
+            exit_code = EXIT_FAILURE;
             break;
         }
 
@@ -182,7 +187,7 @@ void task() {
 
             err = send_signal(fork_res, STOP_SIGNAL);
             if (err == ERROR) {
-                break;
+                exit_code = EXIT_FAILURE;
             }
 
             break;
@@ -195,7 +200,7 @@ void task() {
 
         if (received_signal != DATA_SIGNAL) {
             printf("Reader process %d received unexpected signal %d\n",
-                    getpid(), received_signal);
+                   getpid(), received_signal);
             continue;
         }
 
@@ -204,7 +209,7 @@ void task() {
 
             if (value != expected) {
                 printf("Sequence error: expected %u, got %u at index %d\n",
-                        expected, value, j);
+                       expected, value, j);
                 error_cnt++;
             }
 
@@ -213,6 +218,7 @@ void task() {
 
         err = send_signal(fork_res, DATA_SIGNAL);
         if (err == ERROR) {
+            exit_code = EXIT_FAILURE;
             break;
         }
     }
@@ -221,6 +227,19 @@ void task() {
     int wait_res = waitpid(fork_res, &status, 0);
     if (wait_res == ERROR) {
         perror("waitpid");
+        exit_code = EXIT_FAILURE;
+    } else {
+        if (WIFEXITED(status)) {
+            int child_code = WEXITSTATUS(status);
+
+            if (child_code != SUCCESS) {
+                printf("Writer exited with code %d\n", child_code);
+                exit_code = EXIT_FAILURE;
+            }
+        } else if (WIFSIGNALED(status)) {
+            printf("Writer was killed by signal %d\n", WTERMSIG(status));
+            exit_code = EXIT_FAILURE;
+        }
     }
 
     printf("Errors: %d\n", error_cnt);
@@ -228,10 +247,13 @@ void task() {
     err = munmap(shared_memory, buffer_size);
     if (err == ERROR) {
         perror("munmap parent");
+        exit_code = EXIT_FAILURE;
     }
+
+    return exit_code;
 }
 
 int main() {
-    task();
-    return SUCCESS;
+    int task_res = task();
+    return task_res;
 }
